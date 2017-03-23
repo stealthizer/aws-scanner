@@ -13,13 +13,12 @@ import argparse
 class nmap_adapter():
 
     def __init__(self):
-        self.portscan = nmap.PortScannerAsync()
+        self.portscan = nmap.PortScanner()
         self.scan_results = []
-        self.nmap_arguments = '-P0 -p 80'
+        self.nmap_arguments = '-P0'
 
     def callback_result(self, host, scan_result):
         print(host + " done!")
-        self.scan_results.append(scan_result)
         print(self.scan_results)
 
     def nmapIsScanning(self):
@@ -28,8 +27,11 @@ class nmap_adapter():
     def wait(self, time):
         self.portscan.wait(time)
 
-    def launch_scan(self, instance_ip):
-        self.portscan.scan(hosts=instance_ip, arguments=self.nmap_arguments, callback=self.callback_result)
+    def launch_scan(self, instance_ip, ports):
+        result = self.portscan.scan(hosts=instance_ip, arguments=self.nmap_arguments + " -p " + ports)
+        self.scan_results.append(result)
+        print(instance_ip + " done!")
+
 
 def get_ec2_ips(ec2client):
     public_ips=[]
@@ -49,10 +51,8 @@ def main():
     instances = get_ec2_ips(ec2client)
     nm = nmap_adapter()
     for instance_ip in instances:
-        print("Scanning " + instance_ip)
-        nm.launch_scan(instance_ip)
-        while nm.nmapIsScanning():
-            nm.wait(2)
+        nm.launch_scan(instance_ip, "22,80,443")
+    print(nm.scan_results)
 
 if __name__ == '__main__':
     main()
