@@ -51,8 +51,23 @@ def main():
     instances = get_ec2_ips(ec2client)
     nm = nmap_adapter()
     for instance_ip in instances:
-        nm.launch_scan(instance_ip, "22,80,443")
-    print(nm.scan_results)
+        nm.launch_scan(instance_ip, "22,80,443,5432")
+
+    final_result = ""
+    for result in nm.scan_results:
+        for keynmap, valuenmap in result.iteritems():
+            if keynmap == 'scan':
+                for keyscan, valuescan in valuenmap.iteritems():
+                    final_result = final_result + "results for: " + keyscan + "\n"
+                    for keytcp, valuetcp in valuescan.iteritems():
+                       if keytcp == 'tcp':
+                           for keyport, valueport in valuetcp.iteritems():
+                                for keystate, valuestate in valueport.iteritems():
+                                    if keystate == 'state':
+                                        if valuestate == 'open':
+                                            final_result = final_result + " * " + str(keyport) + " tcp: " + valuestate +"\n"
+
+    print(final_result)
 
 if __name__ == '__main__':
     main()
