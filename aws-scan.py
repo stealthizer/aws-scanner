@@ -44,28 +44,35 @@ def get_ec2_ips(ec2client):
 def main():
     parser = argparse.ArgumentParser(description='Creates a cloudfront distribution and related route53 needed')
     parser.add_argument('-p', '--profile', required=True, help='profile of the AWS account')
+    parser.add_argument('-l', '--portlist', required=True, help='ports to evaluate')
     args = parser.parse_args()
     __profile = args.profile
+    __port_list = args.portlist
     __ec2conn = AWSBotoAdapter()
     ec2client = __ec2conn.get_client("ec2", __profile)
     instances = get_ec2_ips(ec2client)
     nm = nmap_adapter()
     for instance_ip in instances:
-        nm.launch_scan(instance_ip, "22,80,443,5432")
+        nm.launch_scan(instance_ip, __port_list)
 
     final_result = ""
     for result in nm.scan_results:
+        partial_result = ""
+        put_in_final_report = False
         for keynmap, valuenmap in result.iteritems():
             if keynmap == 'scan':
                 for keyscan, valuescan in valuenmap.iteritems():
-                    final_result = final_result + "results for: " + keyscan + "\n"
+                    partial_result = partial_result + "results for: " + keyscan + "\n"
                     for keytcp, valuetcp in valuescan.iteritems():
                        if keytcp == 'tcp':
                            for keyport, valueport in valuetcp.iteritems():
                                 for keystate, valuestate in valueport.iteritems():
                                     if keystate == 'state':
                                         if valuestate == 'open':
-                                            final_result = final_result + " * " + str(keyport) + " tcp: " + valuestate +"\n"
+                                            put_in_final_report = True
+                                            partial_result = partial_result + " * " + str(keyport) + " tcp: " + valuestate +"\n"
+                if put_in_final_report:
+                    final_result = final_result + partial_result
 
     print(final_result)
 
