@@ -1,2 +1,2 @@
 python-nmap
-git+ssh://git@github.com/stealthizer/anthill.git@master#master
+git+ssh://git@github.com/stealthizer/anthill.git@feature/ec2_describe_images#master
