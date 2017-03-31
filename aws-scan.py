@@ -5,8 +5,8 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-from aws.boto_connections import AWSBotoAdapter
 from aws.ec2_adapter import Ec2Adapter
+from aws.elb_adapter import ElbAdapter
 import nmap
 import argparse
 
@@ -45,12 +45,14 @@ def main():
     __profile = args.profile
     __port_list = args.portlist
     ec2client = Ec2Adapter(__profile)
+    elbclient = ElbAdapter(__profile)
     instances_dict = ec2client.get_ec2_instances()
-    print("found " + str(len(instances_dict)) + " servers!")
+    elbs_dict = elbclient.get_elb_ips()
+    target_dict = instances_dict + elbs_dict
+    print("found " + str(len(target_dict)) + " targets!")
     nm = nmap_adapter()
-    for instance in instances_dict:
-        nm.launch_scan(instance, __port_list)
-
+    for target in target_dict:
+        nm.launch_scan(target, __port_list)
     final_result = ""
     servername = ""
     for result in nm.scan_results:
